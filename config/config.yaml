@@ -1,0 +1,132 @@
+# Visual RAG-Lite Configuration
+
+# Project Settings
+project_name: "Visual-RAG-Lite"
+seed: 42
+
+# Data Settings
+data:
+  docvqa_path: "data/docvqa"
+  infographicvqa_path: "data/infographicvqa"
+  max_documents: null  # null means use all documents
+  image_size: [224, 224]
+  
+# OCR Settings (Phase 1: Parsing)
+ocr:
+  engine: "paddleocr"
+  lang: "en"
+  use_pp_structure: true
+  use_angle_cls: true
+  use_gpu: true
+  det_db_thresh: 0.3
+  det_db_box_thresh: 0.5
+  
+# Chunking Settings
+chunking:
+  method: "layout_aware"  # Options: "layout_aware", "fixed_size", "semantic"
+  max_chunk_size: 512
+  overlap: 50
+  preserve_structure: true
+  group_headings: true
+  group_captions: true
+  
+# Retrieval Settings (Phase 2)
+retrieval:
+  # CLIP Model for Embeddings
+  clip_model: "openai/clip-vit-base-patch32"
+  text_embedding_dim: 512
+  vision_embedding_dim: 512
+  hybrid_embedding_dim: 1024  # text + vision concatenated
+  
+  # Vector Index Settings
+  index_type: "HNSW"  # Hierarchical Navigable Small World
+  hnsw_m: 16  # Number of connections per layer
+  hnsw_ef_construction: 200  # Size of dynamic candidate list
+  hnsw_ef_search: 50  # Search parameter
+  
+  # Retrieval Parameters
+  top_k: 5
+  batch_size: 32
+  use_visual_features: true  # Set to false for text-only baseline
+  
+# Generation Settings (Phase 3)
+generation:
+  # Model Configuration
+  model_name: "microsoft/Phi-3-mini-4k-instruct"
+  model_size: "3.8B"
+  max_length: 512
+  temperature: 0.7
+  top_p: 0.9
+  num_beams: 4
+  
+  # LoRA Configuration (PEFT)
+  use_lora: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_modules: ["q_proj", "v_proj"]
+  lora_bias: "none"
+  
+  # Training Configuration
+  num_epochs: 3
+  learning_rate: 2e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  gradient_accumulation_steps: 4
+  
+  # Generation Prompts
+  prompt_template: |
+    Context: {context}
+    
+    Question: {question}
+    
+    Based on the provided context, answer the question concisely and provide the citation to the source chunk.
+    Answer: 
+
+# Evaluation Settings
+evaluation:
+  metrics: ["anls", "accuracy", "f1"]
+  anls_threshold: 0.5
+  
+  # Efficiency Metrics
+  measure_latency: true
+  measure_memory: true
+  measure_model_size: true
+  num_latency_samples: 100
+  
+# Baseline Configurations
+baselines:
+  llava:
+    model_name: "llava-hf/llava-1.5-7b-hf"
+    use_full_finetuning: false
+    
+  text_only_rag:
+    use_visual_features: false
+    
+  full_finetuning:
+    use_lora: false
+    
+# Training Settings
+training:
+  output_dir: "models/checkpoints"
+  logging_dir: "logs"
+  save_steps: 500
+  eval_steps: 500
+  logging_steps: 100
+  save_total_limit: 3
+  load_best_model_at_end: true
+  metric_for_best_model: "anls"
+  greater_is_better: true
+  
+  # Hardware
+  use_gpu: true
+  fp16: true
+  gradient_checkpointing: true
+  
+# Paths
+paths:
+  data_dir: "data"
+  models_dir: "models"
+  results_dir: "results"
+  logs_dir: "logs"
+  cache_dir: ".cache"
