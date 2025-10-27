@@ -71,7 +71,6 @@ CVPR/
 │   └── experiments/            # Evaluation results
 ├── requirements.txt            # Python dependencies
 ├── .gitignore                 # Git ignore file
-├── prompt.md                  # Research paper content
 └── README.md                  # This file
 ```
 
@@ -86,7 +85,7 @@ CVPR/
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/visual-rag-lite.git
+git clone https://github.com/rajashikdatta/visual-rag-lite.git
 cd visual-rag-lite
 ```
 
@@ -425,7 +424,7 @@ If you use this code in your research, please cite:
 ```bibtex
 @article{visualraglite2025,
   title={Visual RAG-Lite: Efficient Grounded Document Question Answering},
-  author={Your Name},
+  author={Rajashik Datta, Sanjan Baitalik},
   journal={CVPR},
   year={2025}
 }
@@ -442,8 +441,8 @@ If you use this code in your research, please cite:
 ## 📞 Contact
 
 For questions or issues, please open an issue on GitHub or contact:
-- Email: your.email@example.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- Email: rajashikdatta215@gmail.com
+- GitHub: [@rajashikdatta](https://github.com/rajashikdatta)
 
 ## 🗺️ Roadmap
 
