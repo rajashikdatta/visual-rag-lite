@@ -10,6 +10,7 @@ import os
 from dataclasses import dataclass
 from typing import List, Dict, Tuple, Optional
 import numpy as np
+import cv2
 from PIL import Image
 from paddleocr import PaddleOCR
 
