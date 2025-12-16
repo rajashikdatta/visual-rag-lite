@@ -20,30 +20,45 @@ from src.parser import DocumentParser
 from src.retriever import MultimodalRetriever
 
 
-def load_docvqa_dataset(data_path: str, split: str = 'train') -> List[Dict]:
+def load_docvqa_dataset(data_path: str, split: str = 'train', max_samples: int = None) -> List[Dict]:
     """
     Load DocVQA dataset from disk.
     
     Args:
         data_path: Path to DocVQA data directory
         split: Dataset split ('train', 'val', or 'test')
+        max_samples: Maximum number of samples to load (for testing)
         
     Returns:
         List of examples with questions, answers, and document paths
     """
-    # This is a placeholder - implement based on your data format
-    # The real DocVQA dataset would need to be downloaded separately
+    # Determine the correct filename based on split
+    if split == 'train':
+        filename = 'train_v1.0_withQT.json'
+    elif split == 'val':
+        filename = 'val_v1.0_withQT.json'
+    elif split == 'test':
+        filename = 'test_v1.0.json'
+    else:
+        raise ValueError(f"Unknown split: {split}")
     
-    annotations_file = Path(data_path) / split / f'{split}_annotations.json'
+    annotations_file = Path(data_path) / filename
     
     if not annotations_file.exists():
         print(f"Warning: {annotations_file} not found. Using dummy data.")
-        return create_dummy_dataset(num_samples=100)
+        return create_dummy_dataset(num_samples=min(max_samples or 100, 100))
     
+    print(f"Loading {split} data from {annotations_file}...")
     with open(annotations_file, 'r') as f:
         data = json.load(f)
     
-    return data['data']
+    samples = data['data']
+    
+    if max_samples:
+        samples = samples[:max_samples]
+        print(f"Limited to {max_samples} samples for testing")
+    
+    return samples
 
 
 def create_dummy_dataset(num_samples: int = 100) -> List[Dict]:
@@ -157,7 +172,8 @@ def prepare_training_data(examples: List[Dict], parser: DocumentParser,
 
 
 def train_visual_rag_lite(config_path: str, data_path: str, output_dir: str,
-                          use_lora: bool = True):
+                          use_lora: bool = True, max_train_samples: int = None,
+                          max_val_samples: int = None):
     """
     Train the Visual RAG-Lite model.
     
@@ -166,6 +182,8 @@ def train_visual_rag_lite(config_path: str, data_path: str, output_dir: str,
         data_path: Path to DocVQA dataset
         output_dir: Output directory for checkpoints
         use_lora: Whether to use LoRA for PEFT
+        max_train_samples: Maximum training samples (for testing)
+        max_val_samples: Maximum validation samples (for testing)
     """
     # Load configuration
     with open(config_path, 'r') as f:
@@ -176,16 +194,31 @@ def train_visual_rag_lite(config_path: str, data_path: str, output_dir: str,
     
     print(f"Training Visual RAG-Lite {'with LoRA' if use_lora else 'with full fine-tuning'}")
     
+    # Check system resources
+    import torch
+    if not torch.cuda.is_available():
+        print("\n⚠️  WARNING: CUDA is not available. Training on CPU will be very slow.")
+        print("   Consider using a GPU or reducing the model size.\n")
+    
     # Initialize components
     print("\nInitializing components...")
-    parser = DocumentParser(config)
-    retriever = MultimodalRetriever(config)
-    generator = GroundedGenerator(config, training_mode=True)
+    try:
+        parser = DocumentParser(config)
+        retriever = MultimodalRetriever(config)
+        print("Loading generator model (this may take a few minutes)...")
+        generator = GroundedGenerator(config, training_mode=True)
+    except Exception as e:
+        print(f"\n❌ Error initializing components: {e}")
+        print("\nTroubleshooting:")
+        print("  - If you're running out of memory, try using a smaller model")
+        print("  - Ensure you have enough RAM (16GB+ recommended)")
+        print("  - Check your internet connection for model downloads")
+        raise
     
     # Load datasets
     print("\nLoading training data...")
-    train_examples = load_docvqa_dataset(data_path, split='train')
-    val_examples = load_docvqa_dataset(data_path, split='val')
+    train_examples = load_docvqa_dataset(data_path, split='train', max_samples=max_train_samples)
+    val_examples = load_docvqa_dataset(data_path, split='val', max_samples=max_val_samples)
     
     print(f"Loaded {len(train_examples)} training examples")
     print(f"Loaded {len(val_examples)} validation examples")
@@ -220,6 +253,10 @@ def main():
                        help='Output directory for model checkpoints')
     parser.add_argument('--no-lora', action='store_true',
                        help='Use full fine-tuning instead of LoRA')
+    parser.add_argument('--max-train-samples', type=int, default=None,
+                       help='Maximum training samples (for testing with small dataset)')
+    parser.add_argument('--max-val-samples', type=int, default=None,
+                       help='Maximum validation samples (for testing with small dataset)')
     
     args = parser.parse_args()
     
@@ -227,7 +264,9 @@ def main():
         config_path=args.config,
         data_path=args.data,
         output_dir=args.output,
-        use_lora=not args.no_lora
+        use_lora=not args.no_lora,
+        max_train_samples=args.max_train_samples,
+        max_val_samples=args.max_val_samples
     )
 
 

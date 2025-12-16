@@ -71,7 +71,10 @@ class MultimodalRetriever:
         
         # Load CLIP model and processor
         print(f"Loading CLIP model: {self.clip_model_name}")
-        self.clip_model = CLIPModel.from_pretrained(self.clip_model_name).to(self.device)
+        self.clip_model = CLIPModel.from_pretrained(
+            self.clip_model_name,
+            use_safetensors=True
+        ).to(self.device)
         self.clip_processor = CLIPProcessor.from_pretrained(self.clip_model_name)
         self.clip_model.eval()
         

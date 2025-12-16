@@ -52,8 +52,10 @@ retrieval:
 # Generation Settings (Phase 3)
 generation:
   # Model Configuration
-  model_name: "microsoft/Phi-3-mini-4k-instruct"
-  model_size: "3.8B"
+  # Using GPT-2 for memory-constrained environments (124M params)
+  # For production with more VRAM: TinyLlama/TinyLlama-1.1B-Chat-v1.0 or microsoft/Phi-3-mini-4k-instruct
+  model_name: "gpt2"
+  model_size: "124M"
   max_length: 512
   temperature: 0.7
   top_p: 0.9

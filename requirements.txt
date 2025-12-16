@@ -14,7 +14,7 @@ Pillow>=10.0.0
 # Embeddings and Retrieval
 sentence-transformers>=2.2.0
 faiss-cpu>=1.7.4  # Use faiss-gpu if CUDA is available
-clip>=1.0
+clip
 
 # Evaluation and Metrics
 numpy>=1.24.0

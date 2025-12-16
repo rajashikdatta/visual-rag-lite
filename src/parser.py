@@ -6,12 +6,20 @@ and layout analysis, followed by visual-semantic chunking to create coherent
 document chunks while preserving structural information.
 """
 
-import numpy as np
-from typing import List, Dict, Tuple, Optional
+import os
 from dataclasses import dataclass
+from typing import List, Dict, Tuple, Optional
+import numpy as np
 from PIL import Image
-import cv2
-from paddleocr import PaddleOCR, PPStructure
+from paddleocr import PaddleOCR
+
+# Try to import PPStructure (may not be available in all versions)
+try:
+    from paddleocr import PPStructure
+    HAS_PP_STRUCTURE = True
+except ImportError:
+    HAS_PP_STRUCTURE = False
+    PPStructure = None
 
 
 @dataclass
@@ -53,23 +61,21 @@ class DocumentParser:
         chunking_config = config.get('chunking', {})
         
         # Initialize PaddleOCR with PP-Structure for layout analysis
-        self.use_structure = ocr_config.get('use_pp_structure', True)
+        self.use_structure = ocr_config.get('use_pp_structure', True) and HAS_PP_STRUCTURE
         
-        if self.use_structure:
+        if self.use_structure and HAS_PP_STRUCTURE:
             # PP-Structure provides layout analysis capabilities
             self.ocr_engine = PPStructure(
                 lang=ocr_config.get('lang', 'en'),
-                use_angle_cls=ocr_config.get('use_angle_cls', True),
-                use_gpu=ocr_config.get('use_gpu', True),
-                show_log=False
+                use_angle_cls=ocr_config.get('use_angle_cls', True)
             )
         else:
             # Standard PaddleOCR without layout analysis
+            if not HAS_PP_STRUCTURE and ocr_config.get('use_pp_structure', True):
+                print("Warning: PPStructure not available, falling back to standard PaddleOCR")
             self.ocr_engine = PaddleOCR(
                 lang=ocr_config.get('lang', 'en'),
-                use_angle_cls=ocr_config.get('use_angle_cls', True),
-                use_gpu=ocr_config.get('use_gpu', True),
-                show_log=False
+                use_angle_cls=ocr_config.get('use_angle_cls', True)
             )
         
         # Chunking parameters
